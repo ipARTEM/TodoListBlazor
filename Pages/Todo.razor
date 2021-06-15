@@ -1,4 +1,6 @@
-﻿@page "/todo"
+﻿@inject TodoListBlazor.Data.Repository.IRepository repository;
+
+@page "/todo"
 
 <div class="container-fluid">
     <div class="col">
@@ -25,11 +27,20 @@
                         </td>
 
                         <td>
-                            <input type="checkbox" @bind="item.IsDone" /> 
+                            @if (!item.IsDone)
+                            {
+                                <input type="checkbox" value="item.IsDone" @onchange="(()=>StatusChanger( item))" />
+                            }
+                            else
+                            {
+                                <input type="checkbox" checked="checked" value="item.IsDone" @onchange="(()=>StatusChanger( item))" />
+
+                            }
+
                         </td>
 
                         <td>
-                            <button class="btn btn-danger" @onclick="(()=>DeleteTodo(item))" >Delete</button>
+                            <button class="btn btn-danger" @onclick="(()=>DeleteTodo(item.Id))" >Delete</button>
 
                         </td>
                     </tr>
@@ -54,7 +65,14 @@
 
 @code {
 
-    private IList<TodoItem> todos = new List<TodoItem>();
+    private IEnumerable<TodoItem> todos = new List<TodoItem>();
+
+    protected override void OnInitialized() // до отрисовки
+    {
+        todos = repository.GetAllItems();
+
+
+    }
 
     private string newTodo;
 
@@ -62,17 +80,30 @@
     {
         if (!string.IsNullOrWhiteSpace(newTodo))
         {
-            todos.Add(new TodoItem { Title = newTodo });
+            //todos.Add(new TodoItem { Title = newTodo });
+
+            repository.AddTodo(newTodo);
 
             newTodo = string.Empty;
         }
 
     }
 
-    private void DeleteTodo(TodoItem deletedItem)
-        {
-        todos.Remove(deletedItem);
+    private void DeleteTodo(int id)
+    {
+        repository.DeleteItem(id);
 
-        }
+
+        //todos.Remove(deletedItem);
+
+    }
+
+    private void StatusChanger(TodoItem chengedItem)
+    {
+        chengedItem.IsDone = !chengedItem.IsDone;
+
+         repository.ValueChanged( chengedItem);
+
+    }
 
 }
